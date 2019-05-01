@@ -7,8 +7,8 @@ c = 8# 背包容量
 n = 5# 物体个数
 w = [2, 3, 5, 1, 4]# 重量
 v = [2, 5, 8, 3, 6]# 价值
-initial_t = 100# 初始温度
-lowest_t = 0.001# 最低温度
+initial_t = 1000# 初始温度
+lowest_t = 1# 最低温度
 max_m = 100#当连续多次都不接受新的状态，开始改变温度
 iteration = 100#设置迭代次数
 
@@ -32,22 +32,61 @@ def get_current_weight(solve):
             weight += w[i]
     return weight
 
+def get_new_solve_a(solve):
+    """
+    根据当前解生成一个邻域解(随机交换某两位的0/1值)
+    """
+    flag = False
+    while not flag:
+        i = 0
+        j = 0
+        while i == j:
+            i = random.randint(0, n-1)
+            j = random.randint(0, n-1)
+        solve_j = solve
+        solve_j[i], solve_j[j] = solve_j[j], solve_j[i]
+
+        # 舍弃非法解
+        if get_current_weight(solve_j) > c:
+            flag = False
+        else:
+            flag = True
+    return solve_j
+
+def get_new_solve_b(solve):
+    """
+    根据当前解生成一个邻域解(随机改变某一位的0/1值)
+    """
+    flag = False
+    while not flag:
+        i = random.randint(0, n-1)
+        solve_j = solve
+        solve_j[i] = solve_j[i]^1
+
+        # 舍弃非法解
+        if get_current_weight(solve_j) > c:
+            flag = False
+        else:
+            flag = True
+    return solve_j
+
 # ============初始化============
 
 # 初始温度
 current_t = initial_t
-# 初始解
-# flag_first = False
-# while not flag_first:
-#     solve_i = np.random.randint(2, size=n)
-#     if get_current_weight(solve_i) <= c:
-#         flag_first = True
-solve_i = [1, 1, 0, 0, 1]
+# 随机生成初始解
+flag_first = False
+while not flag_first:
+    solve_i = np.random.randint(2, size=n)
+    if get_current_weight(solve_i) <= c:
+        flag_first = True
 print("初始解：", solve_i)
 # 最优解
 solve_best = solve_i
 # 初始解的物品价值
 current_value = get_current_value(solve_i)
+# 温度代数控制
+k = 0
 
 # ============开始循环============
 
@@ -61,22 +100,7 @@ while current_t > lowest_t:
     # 内循环，连续多次不接受新的状态或者是迭代多次,跳出内循环
     while count_m < max_m and count_iter < iteration:
         # 根据当前解生成一个邻域解(随机交换某两位的0/1值)
-        flag = False
-        while not flag:
-            i = 0
-            j = 0
-            while i == j:
-                i = random.randint(0, n-1)
-                j = random.randint(0, n-1)
-            solve_j = solve_i
-            solve_j[i], solve_j[j] = solve_j[j], solve_j[i]
-
-            # 舍弃非法解
-            if get_current_weight(solve_j) > c:
-                flag = False
-            else:
-                flag = True
-        
+        solve_j = get_new_solve_b(solve_i)
         # 计算新解的适应值
         j_value = get_current_value(solve_j)
         if j_value > current_value:
@@ -95,8 +119,9 @@ while current_t > lowest_t:
         else:
             count_m += 1
         count_iter += 1
-    # 降温
-    current_t *= 0.99
+    # 降温(经典降温方式)
+    k += 1
+    current_t = current_t/math.log2(1+k)
 
 # 外循环结束，打印结果
 print("最优解", solve_best)
