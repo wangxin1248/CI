@@ -110,7 +110,7 @@ while current_t > lowest_t:
             solve_best = solve_j
         elif j_value < current_value:
             # 新解价值小则按照一定的概率接受劣解
-            probability = math.exp((j_value-current_value)/initial_t)
+            probability = math.exp(-1*(j_value-current_value)/initial_t)
             random_i = random.random()
             if random_i < probability:
                 solve_i = solve_j
